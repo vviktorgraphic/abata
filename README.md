@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Szállásfoglalási rendszer
 
-## Getting Started
+Ez egy Next.js, TypeScript, PostgreSQL, Prisma és Tailwind CSS alapú projektvázlat egyetlen szállásegységhez.
 
-First, run the development server:
+## Előfeltételek
+- Node.js 20+
+- npm
+- Docker Desktop vagy Docker CLI Windows-ra telepítve
+- A Docker Desktopnek futnia kell, mielőtt a `docker compose` parancs működne
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Helyi indítás
+1. Másold a `.env.example` fájlt `.env` néven, és állítsd be a helyi értékeket.
+2. Ha Docker Desktop telepítve van és fut, indítsd el a PostgreSQL konténert:
+   ```bash
+   docker compose up -d
+   ```
+3. Ha a PowerShellben ezt látod:
+   ```powershell
+   docker: The term 'docker' is not recognized as the name of a cmdlet...
+   ```
+   akkor a Docker CLI nincs a PATH-ban, vagy nincs telepítve a Docker Desktop. Telepítsd és indítsd el a Docker Desktopet, majd ellenőrizd:
+   ```powershell
+   docker --version
+   ```
+4. Telepítsd a függőségeket:
+   ```bash
+   npm install
+   ```
+5. Generáld a Prisma klienst és alkalmazd a verziózott migrációkat:
+   ```bash
+   npm run db:generate
+   npx prisma migrate deploy
+   ```
+6. Igény szerint töltsd be az idempotens fejlesztői mintaadatokat:
+   ```bash
+   npm run db:seed
+   ```
+7. Indítsd el a fejlesztői szervert:
+   ```bash
+   npm run dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Ellenőrző parancsok
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
+- `npm run format`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architektúrai megjegyzések
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- A foglalási intervallumok [check-in, check-out) módon kezelendők.
+- A szerveroldali validáció kötelező minden üzleti szabály esetén.
+- Az ütközésvizsgálat adatbázis-lekérdezéssel ellenőrzi a blokkoló foglalási státuszokat és a naptárblokkokat.
+- Az árazás adatvezérelt és adminból később szerkeszthető lesz.
 
-## Learn More
+Részletes szabályok: `docs/booking-rules.md`. Rétegek és adatmodell: `docs/architecture.md`.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Hibaelhárítás
+Ha a Docker parancs továbbra is nem érhető el, akkor a PostgreSQL helyi példányát manuálisan is futtathatod, és a `DATABASE_URL` értékét ennek megfelelően módosítod. A projektben a `docker-compose.yml` szolgáltatja a helyi PostgreSQL referencia-konfigurációt.
