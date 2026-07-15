@@ -37,3 +37,9 @@ Az első érvényes kattintás az érkezés, a következő későbbi, távozásr
 `GET /api/availability?from=YYYY-MM-DD&to=YYYY-MM-DD`
 
 A tartomány fél-nyílt, legfeljebb 12 hónapos. A válasz `range` és rendezett `intervals` mezőt tartalmaz; minden intervallum kizárólag `start`, `end` és `type` (`BOOKING` vagy `BLOCK`) értéket publikál. Hibás dátumnál `INVALID_DATE_RANGE`, túl hosszú tartománynál `RANGE_TOO_LARGE` kódú, HTTP 400 válasz érkezik.
+
+## Foglalási igény API
+
+A `POST /api/bookings` Zod sémával ellenőrzi és normalizálja a vendégadatokat. A `childCount` mindig a `childAges.length` értékéből származik. A szerver közvetlenül mentés előtt újraszámolja az éjszakákat, ellenőrzi a múltbeli dátumot és a rendelkezésre állást, majd saját maga számolja az árat. Siker esetén csak publikus referencia, státusz, dátumok és áradatok kerülnek a válaszba; belső azonosító és személyes adat nem.
+
+Hibakódok: `INVALID_JSON` (400), `INVALID_IDEMPOTENCY_KEY` (400), `VALIDATION_ERROR` (422, opcionális `fieldErrors`), `BOOKING_PERIOD_UNAVAILABLE` (409), `IDEMPOTENCY_CONFLICT` (409), `PRICING_UNAVAILABLE` (500), `INTERNAL_ERROR` (500). A létrejövő státusz `PENDING`, nem automatikusan `CONFIRMED`.

@@ -80,11 +80,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .primary-button, .secondary-button { min-height: 46px; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-weight: 800; }
 .primary-button { border: 0; background: var(--free-strong); color: white; }
 .primary-button:hover { background: #245f40; }
+.primary-button:disabled, .secondary-button:disabled { cursor: wait; opacity: 0.65; }
 .secondary-button { width: 100%; border: 1px solid var(--border); background: white; color: var(--foreground); }
 .field-error { margin: -4px 0 0; color: #9c302d; font-size: 0.78rem; }
 .notice { padding: 12px; border-radius: 9px; font-size: 0.84rem; line-height: 1.5; }
 .notice--error { background: var(--blocked-soft); color: #742d2b; }
 .notice--success { background: var(--free); color: #245f40; }
+.booking-success { margin-top: 8px; padding: 18px; border: 1px solid #9ac7aa; border-radius: 12px; background: var(--free); }
+.booking-success h3 { margin: 6px 0; font-family: Georgia, serif; font-size: 1.5rem; letter-spacing: 0.04em; }
+.booking-success > p { margin: 6px 0 14px; }
+.price-breakdown { display: grid; gap: 7px; margin: 14px 0; }
+.price-breakdown div { display: flex; justify-content: space-between; gap: 12px; }
+.price-breakdown dt, .price-breakdown dd { margin: 0; }
+.price-total { margin-top: 5px; padding-top: 10px; border-top: 1px solid #9ac7aa; font-weight: 800; }
 
 @media (max-width: 980px) {
   .booking-layout { grid-template-columns: 1fr; }

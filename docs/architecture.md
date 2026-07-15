@@ -17,7 +17,13 @@ A rendszer egy Next.js alkalmazás, amely a Next.js App Router architektúrát h
 - A `lib/booking/calendar.ts` tiszta függvényekkel alakítja az intervallumokat explicit napi állapotokká és ugyanazt a domain átfedésvizsgálatot használja.
 - A `lib/booking/validation.ts` közös Zod séma a kliensoldali prototípus mezőinek ellenőrzésére; későbbi szerveroldali beküldésnél ugyanez a séma újrahasználható.
 - A `components/booking` kis, felelősség szerint bontott komponenseket tartalmaz. A publikus oldal szabványos HTML form-elemekből áll, ezért önálló weboldalba később átültethető.
-- A jelenlegi űrlap kizárólag ellenőrzött összefoglalót jelenít meg, adatbázis-műveletet nem végez.
+- A jelenlegi űrlap a `POST /api/bookings` és a `createBookingRequest` alkalmazásszolgáltatáson keresztül valódi `PENDING` igényt hoz létre. A szolgáltatás kezeli a normalizált bemenetet, az árazást, snapshotot, státusztörténetet és idempotenciát.
+
+## Konzisztens foglalási tranzakció
+
+A mentés Prisma `Serializable` tranzakcióban történik. A tranzakció `pg_advisory_xact_lock(hashtextextended(unitId, 0))` zárolást kér a szállásegységre, majd a lock után futtatja újra a booking- és CalendarBlock-lekérdezést. Az azonos egységre érkező konkurens mentések így sorban haladnak; a második kérés már látja az első `PENDING` rekordját. A lock tranzakció végén automatikusan felszabadul.
+
+Az `Idempotency-Key` és a normalizált kérés SHA-256 hash-e a `BookingRequestIdempotency` rekordban tárolódik a biztonságos válasszal. A rekordok 24 óra után lejártak; későbbi ütemezett karbantartás törli az `expiresAt` szerinti rekordokat, a kérésfolyamat pedig újrafelhasználáskor eltávolítja a lejárt kulcsot.
 
 ## Közös elvek
 

@@ -58,6 +58,17 @@ GET /api/availability?from=2026-07-01&to=2026-09-01
 
 A dátumok `YYYY-MM-DD` formátumúak, a `to` kizáró felső határ, és legfeljebb 12 hónapos tartomány kérhető. A válasz kizárólag `BOOKING`/`BLOCK` intervallumokat tartalmaz, személyes vagy belső adatot nem.
 
+Az űrlap a `POST /api/bookings` végpontra küld foglalási igényt. A szerver újravalidálja a dátumot és elérhetőséget, az aktív `PricingRule` rekordokból számít árat, majd `PENDING` foglalást, státusztörténetet és változtathatatlan árpillanatképet ment. A kliens nem küld árat.
+
+Példakérés:
+
+```bash
+curl -X POST http://localhost:3000/api/bookings \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: manual-test-001" \
+  -d '{"checkInDate":"2030-11-10","checkOutDate":"2030-11-13","guestName":"Teszt Vendég","guestEmail":"teszt@example.test","guestPhone":"+36301234567","adultCount":2,"childAges":[8],"notes":"","privacyAccepted":true}'
+```
+
 ## Manuális ellenőrzés
 
 1. Futtasd a migrációt és a seedet: `npx prisma migrate deploy`, majd `npm run db:seed`.
@@ -66,6 +77,8 @@ A dátumok `YYYY-MM-DD` formátumúak, a `to` kizáró felső határ, és legfel
 4. Billentyűzettel járd be a napokat és mezőket; ellenőrizd a fókuszjelölést és a napok felolvasott állapotát.
 5. Válassz egymást követő, blokkon áthaladó és határnapon induló időszakokat; csak érvényes intervallum állhat össze.
 6. Változtasd a gyermekek számát, töltsd ki az életkorokat, majd próbáld ki a hibás és helyes űrlap-ellenőrzést.
+7. Küldd újra ugyanazt a POST kérést ugyanazzal az `Idempotency-Key` értékkel: ugyanazt a választ kell kapnod új rekord nélkül. Módosított törzzsel HTTP 409 az elvárt eredmény.
+8. Két párhuzamos, azonos időszakú kérésből legfeljebb egy lehet sikeres.
 
 ## Architektúrai megjegyzések
 

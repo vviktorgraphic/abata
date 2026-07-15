@@ -26,7 +26,12 @@ async function main() {
       children: { create: [{ age: 8 }] },
       statusHistory: { create: [{ toStatus: BookingStatus.CONFIRMED, reason: "Fejlesztői seed" }] },
       priceSnapshot: {
-        create: { numberOfNights: 5, subtotal: 250000, total: 250000, currency: "HUF", breakdown: { nightlyRate: 50000 } },
+        create: {
+          numberOfNights: 5, subtotal: 250000, nightlyRate: 50000, accommodationSubtotal: 250000,
+          extraAdultFee: 0, childrenFee: 0, cleaningFee: 0, tourismTax: 0, discount: 0,
+          total: 250000, currency: "HUF", pricingRuleId: "LEGACY-SEED", pricingRuleVersion: 1,
+          breakdown: { nightlyRate: 50000 },
+        },
       },
     },
   });
@@ -58,6 +63,24 @@ async function main() {
         source: "DEV_SEED",
       },
     });
+  }
+
+  const bands = [
+    { name: "1 éjszakás ársáv", minimumNights: 1, maximumNights: 1, nightlyRate: 45000 },
+    { name: "2 éjszakás ársáv", minimumNights: 2, maximumNights: 2, nightlyRate: 38000 },
+    { name: "3–4 éjszakás ársáv", minimumNights: 3, maximumNights: 4, nightlyRate: 34000 },
+    { name: "5–7 éjszakás ársáv", minimumNights: 5, maximumNights: 7, nightlyRate: 30000 },
+    { name: "8+ éjszakás ársáv", minimumNights: 8, maximumNights: null, nightlyRate: 27000 },
+  ];
+  for (const band of bands) {
+    const data = {
+      ...band, unitId: unit.id, currency: "HUF", baseGuestCount: 2, extraAdultFee: 7000,
+      childRates: [{ minAge: 0, maxAge: 5, nightlyFee: 0 }, { minAge: 6, maxAge: 11, nightlyFee: 3000 }, { minAge: 12, maxAge: 17, nightlyFee: 5000 }],
+      cleaningFee: 15000, version: 1, priority: 100, active: true,
+    };
+    const existing = await prisma.pricingRule.findFirst({ where: { unitId: unit.id, name: band.name } });
+    if (existing) await prisma.pricingRule.update({ where: { id: existing.id }, data });
+    else await prisma.pricingRule.create({ data });
   }
 }
 
