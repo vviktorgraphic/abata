@@ -7,7 +7,7 @@
 - Később az admin autentikáció jelszó + e-mailes 2FA kóddal lesz megvalósítva.
 
 ## Jelenlegi állapot
-A projekt scaffold alapú és a biztonsági irányelvek dokumentáltak, de a teljes autentikáció és RBAC még nincs implementálva.
+A szerveroldali admin hitelesítés implementált; részletek az [admin-authentication.md](admin-authentication.md) fájlban.
 
 ## Foglalási API
 

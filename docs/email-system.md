@@ -2,6 +2,8 @@
 
 ## Provider absztrakció és konfiguráció
 
+Az `ADMIN_LOGIN_CODE` sablon az outbox része; bodyja AES-256-GCM titkosítva kerül adatbázisba, és csak a worker fejti vissza küldéskor. Developmentben `EMAIL_DEBUG_CONTENT=true` mellett a console provider kiírhatja a tartalmat.
+
 Az `EmailProvider.send` szolgáltatófüggetlen `EmailMessage` objektumot fogad. Jelenleg csak a fejlesztői `ConsoleEmailProvider` létezik; nem küld valódi levelet, és production környezetben explicit konfigurációs hibát ad. Későbbi szolgáltató a `createEmailProvider` csatlakozási pontján illeszthető be.
 
 Környezeti változók: `EMAIL_PROVIDER`, `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_REPLY_TO`, `BOOKING_NOTIFICATION_EMAIL` (fejlesztési fallback: `AUTH_ADMIN_EMAIL`) és `EMAIL_MAX_ATTEMPTS`. A production konfigurációnak teljesnek és érvényesnek kell lennie.

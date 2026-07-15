@@ -8,6 +8,7 @@ const schema = z.object({
   notificationEmail: z.email(),
   maxAttempts: z.coerce.number().int().min(1).max(10),
   appName: z.string().trim().min(1),
+  encryptionSecret: z.string().min(32),
 });
 
 export type EmailConfig = z.infer<typeof schema>;
@@ -30,6 +31,7 @@ export function getEmailConfig(environment: NodeJS.ProcessEnv = process.env): Em
     notificationEmail: environment.BOOKING_NOTIFICATION_EMAIL ?? environment.AUTH_ADMIN_EMAIL ?? (production ? undefined : "admin@example.test"),
     maxAttempts: environment.EMAIL_MAX_ATTEMPTS ?? "5",
     appName: environment.NEXT_PUBLIC_APP_NAME ?? "Szállásfoglalás",
+    encryptionSecret: environment.AUTH_SECRET ?? (production ? undefined : "development-auth-secret-change-me-32-chars"),
   });
   if (!result.success) throw new EmailConfigurationError();
   return result.data;

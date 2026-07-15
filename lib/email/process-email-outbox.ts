@@ -1,6 +1,7 @@
 import { EmailStatus, type EmailOutbox, type PrismaClient } from "@prisma/client";
 import type { EmailConfig } from "./config";
 import type { EmailProvider } from "./types";
+import { decryptEmailBody } from "./encryption";
 
 const BACKOFF_MINUTES = [1, 5, 30, 120] as const;
 
@@ -55,8 +56,8 @@ export async function processEmailOutbox(
         from: { name: config.fromName, address: config.fromAddress },
         ...(config.replyTo ? { replyTo: config.replyTo } : {}),
         subject: email.subject,
-        text: email.textBody,
-        html: email.htmlBody,
+        text: decryptEmailBody(email.textBody, config.encryptionSecret),
+        html: decryptEmailBody(email.htmlBody, config.encryptionSecret),
         providerMessageKey: email.deduplicationKey,
         metadata: { emailType: email.type },
       });

@@ -8,6 +8,7 @@ A rendszer egy Next.js alkalmazás, amely a Next.js App Router architektúrát h
 - App layer: Next.js route-ok és UI komponensek.
 - Domain layer: tiszta dátum- és validációs függvények, valamint a szerveroldali Prisma elérhetőségvizsgálat a `lib/booking` modulban.
 - Data layer: Prisma és PostgreSQL.
+- Admin auth layer: challenge, lockout, audit és szerveroldali session a `lib/admin-auth` modulban.
 - Integration layer: iCal import/export modul.
 - Security layer: input validation és titokkezelés.
 

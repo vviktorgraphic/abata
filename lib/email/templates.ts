@@ -30,6 +30,13 @@ export function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
+export function adminLoginCodeTemplate(input: { code: string; expiresInMinutes: number; appName: string }) {
+  const subject = `${input.appName} – admin belépési kód`;
+  const text = `Admin bejelentkezési kód: ${input.code}\n\nA kód ${input.expiresInMinutes} percig érvényes. Ne oszd meg mással. Ha nem te kezdeményezted a belépést, hagyd figyelmen kívül ezt az üzenetet.`;
+  const html = `<h1>Admin bejelentkezés</h1><p>A belépési kód:</p><p style="font-size:32px;font-weight:bold;letter-spacing:8px">${input.code}</p><p>A kód ${input.expiresInMinutes} percig érvényes. Ne oszd meg mással.</p><p>Ha nem te kezdeményezted a belépést, hagyd figyelmen kívül ezt az üzenetet.</p>`;
+  return { subject, text, html };
+}
+
 const money = (value: number) => new Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 }).format(value);
 
 function priceText(data: BookingEmailData): string {

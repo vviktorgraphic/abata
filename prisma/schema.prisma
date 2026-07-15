@@ -23,6 +23,17 @@ enum EmailType {
   BOOKING_REQUEST_ADMIN
   BOOKING_CONFIRMED_GUEST
   BOOKING_REJECTED_GUEST
+  ADMIN_LOGIN_CODE
+}
+
+enum AdminAuthEventType {
+  PASSWORD_LOGIN_ATTEMPT
+  TWO_FACTOR_REQUESTED
+  TWO_FACTOR_ATTEMPT
+  LOGIN_SUCCEEDED
+  LOGIN_FAILED
+  LOGOUT
+  SESSION_REVOKED
 }
 
 enum EmailStatus {
@@ -210,4 +221,65 @@ model EmailOutbox {
 
   @@index([status, nextAttemptAt])
   @@index([bookingId])
+}
+
+model AdminUser {
+  id                     String                @id @default(cuid())
+  email                  String
+  normalizedEmail        String                @unique
+  passwordHash           String
+  displayName            String
+  isActive               Boolean               @default(true)
+  failedPasswordAttempts Int                   @default(0)
+  lockedUntil            DateTime?
+  lastLoginAt            DateTime?
+  passwordChangedAt      DateTime              @default(now())
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  loginChallenges        AdminLoginChallenge[]
+  sessions               AdminSession[]
+  authEvents             AdminAuthEvent[]
+}
+
+model AdminLoginChallenge {
+  id                 String    @id @default(cuid())
+  adminUserId        String
+  challengeTokenHash String    @unique
+  codeHash           String
+  expiresAt          DateTime
+  consumedAt         DateTime?
+  failedCodeAttempts Int       @default(0)
+  maxCodeAttempts    Int       @default(5)
+  requestedIpHash    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  adminUser          AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, expiresAt])
+}
+
+model AdminSession {
+  id          String    @id @default(cuid())
+  adminUserId String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model AdminAuthEvent {
+  id          String             @id @default(cuid())
+  adminUserId String?
+  eventType   AdminAuthEventType
+  success     Boolean
+  reasonCode  String?
+  createdAt   DateTime           @default(now())
+  adminUser   AdminUser?         @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  @@index([adminUserId, createdAt])
 }
