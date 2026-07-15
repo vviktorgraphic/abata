@@ -1,10 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
-import { BookingStatus, Prisma, type PrismaClient } from "@prisma/client";
+import { BookingStatus, EmailType, Prisma, type PrismaClient } from "@prisma/client";
 import { calculateNumberOfNights, checkAvailability, validateBookingDates } from "./domain";
 import type { BookingRequestInput } from "./request-validation";
 import { calculatePrice } from "@/lib/pricing/calculate-price";
 import { selectPricingRule } from "@/lib/pricing/select-pricing-rule";
 import { PricingError, type PriceCalculation, type PricingRuleData } from "@/lib/pricing/types";
+import { getEmailConfig } from "@/lib/email/config";
+import { bookingRequestAdminTemplate, bookingRequestGuestTemplate } from "@/lib/email/templates";
 
 export type BookingResponse = {
   booking: {
@@ -53,6 +55,7 @@ export async function createBookingRequest(
   const checkInDate = new Date(`${input.checkInDate}T00:00:00.000Z`);
   const checkOutDate = new Date(`${input.checkOutDate}T00:00:00.000Z`);
   validateBookingDates({ checkInDate, checkOutDate, adultCount: input.adultCount, childCount: input.childAges.length, childAges: input.childAges }, now);
+  const emailConfig = getEmailConfig();
   const hash = requestHash(input);
 
   return client.$transaction(async (transaction) => {
@@ -93,6 +96,15 @@ export async function createBookingRequest(
         nights, total: price.total, currency: "HUF", price: publicPrice as Omit<PriceCalculation, "pricingRuleId">,
       },
     };
+    const emailData = {
+      publicReference: reference, guestName: input.guestName, guestEmail: input.guestEmail,
+      guestPhone: input.guestPhone, checkInDate: input.checkInDate, checkOutDate: input.checkOutDate,
+      nights, adultCount: input.adultCount, childAges: input.childAges, notes: input.notes,
+      createdAt: now, price, appName: emailConfig.appName,
+      contactEmail: emailConfig.replyTo || emailConfig.fromAddress,
+    };
+    const guestEmail = bookingRequestGuestTemplate(emailData);
+    const adminEmail = bookingRequestAdminTemplate(emailData);
 
     const booking = await transaction.booking.create({
       data: {
@@ -111,6 +123,23 @@ export async function createBookingRequest(
         } },
       },
       select: { id: true },
+    });
+
+    await transaction.emailOutbox.createMany({
+      data: [
+        {
+          type: EmailType.BOOKING_REQUEST_GUEST, recipient: input.guestEmail,
+          subject: guestEmail.subject, textBody: guestEmail.text, htmlBody: guestEmail.html,
+          bookingId: booking.id, maxAttempts: emailConfig.maxAttempts,
+          deduplicationKey: `booking:${booking.id}:guest-request`,
+        },
+        {
+          type: EmailType.BOOKING_REQUEST_ADMIN, recipient: emailConfig.notificationEmail,
+          subject: adminEmail.subject, textBody: adminEmail.text, htmlBody: adminEmail.html,
+          bookingId: booking.id, maxAttempts: emailConfig.maxAttempts,
+          deduplicationKey: `booking:${booking.id}:admin-request`,
+        },
+      ],
     });
 
     if (idempotencyKey) {

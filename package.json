@@ -16,7 +16,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "email:process": "tsx scripts/process-email-outbox.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

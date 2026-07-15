@@ -18,6 +18,22 @@ enum BookingStatus {
   ICAL_IMPORTED
 }
 
+enum EmailType {
+  BOOKING_REQUEST_GUEST
+  BOOKING_REQUEST_ADMIN
+  BOOKING_CONFIRMED_GUEST
+  BOOKING_REJECTED_GUEST
+}
+
+enum EmailStatus {
+  PENDING
+  PROCESSING
+  SENT
+  RETRY
+  FAILED
+  CANCELLED
+}
+
 model AccommodationUnit {
   id             String          @id @default(cuid())
   name           String
@@ -57,6 +73,7 @@ model Booking {
   statusHistory     BookingStatusHistory[]
   priceSnapshot     BookingPriceSnapshot?
   idempotencyRecord BookingRequestIdempotency?
+  emailOutbox       EmailOutbox[]
 
   @@index([unitId, checkInDate, checkOutDate])
   @@index([unitId, status, checkInDate, checkOutDate])
@@ -167,4 +184,30 @@ model BookingRequestIdempotency {
   booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+}
+
+model EmailOutbox {
+  id                String      @id @default(cuid())
+  type              EmailType
+  status            EmailStatus @default(PENDING)
+  recipient         String
+  subject           String
+  textBody          String
+  htmlBody          String
+  bookingId         String?
+  attemptCount      Int         @default(0)
+  maxAttempts       Int         @default(5)
+  nextAttemptAt     DateTime    @default(now())
+  sentAt            DateTime?
+  failedAt          DateTime?
+  lastErrorCode     String?
+  lastErrorMessage  String?
+  providerMessageId String?
+  deduplicationKey  String      @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  booking           Booking?    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([bookingId])
 }

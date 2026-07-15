@@ -112,6 +112,7 @@ function BookingSuccess({ booking, onNew }: { booking: BookingApiResponse["booki
       <p className="eyebrow">Foglalási igény rögzítve</p>
       <h3>{booking.reference}</h3>
       <p>{booking.nights} éjszaka · {booking.status}</p>
+      <p>Foglalási igényedet rögzítettük. Az árajánlatot és a foglalás adatait e-mailben küldjük el. A foglalás a tulajdonos visszaigazolásáig nem végleges.</p>
       <dl className="price-breakdown">
         <div><dt>Szállás ({money.format(booking.price.nightlyRate)}/éj)</dt><dd>{money.format(booking.price.accommodationSubtotal)}</dd></div>
         <div><dt>Extra felnőtt</dt><dd>{money.format(booking.price.extraAdultFee)}</dd></div>
