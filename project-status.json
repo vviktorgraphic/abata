@@ -1,0 +1,12 @@
+{
+  "project": { "name": "foglalo01", "repository": "<repository-url>", "defaultBranch": "main" },
+  "stack": ["Next.js 16.2.10", "React 19.2.4", "TypeScript 5", "PostgreSQL", "Prisma 6.19.3", "Tailwind CSS 4", "Vitest 3.2.7", "Docker Compose", "GitHub Actions"],
+  "completedModules": ["booking-domain", "availability", "pricing", "booking-api", "idempotency", "email-outbox", "admin-authentication", "admin-booking-management", "ical-import-export"],
+  "currentTestCount": 84,
+  "latestMigration": "20260715213000_add_ical_synchronization",
+  "importantScripts": { "dev": "npm run dev", "test": "npm test", "emailWorker": "npm run email:process", "icalWorker": "npm run ical:sync", "adminCreate": "npm run admin:create" },
+  "importantDocs": ["docs/PROJECT_HANDOFF.md", "docs/LOCAL_DEVELOPMENT_RUNBOOK.md", "docs/API_REFERENCE.md", "docs/NEW_CHAT_STARTER.md", "docs/NEXT_SPRINT.md"],
+  "knownLimitations": ["console-only email provider", "no deployment scheduler", "no automatic iCal conflict resolution", "no multiple admin roles", "no payment integration"],
+  "recommendedNextSprint": "Production readiness foundation",
+  "lastUpdated": "2026-07-15"
+}

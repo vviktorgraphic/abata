@@ -10,6 +10,14 @@ Ez egy Next.js, TypeScript, PostgreSQL, Prisma és Tailwind CSS alapú projektv�
 
 Az admin hitelesítés és a `npm run admin:create` használata a [docs/admin-authentication.md](docs/admin-authentication.md) dokumentumban található.
 
+Az admin dashboard, foglaláslista és elfogadás/elutasítás folyamata a [docs/admin-booking-management.md](docs/admin-booking-management.md) dokumentumban található.
+
+Az iCal export/import és SSRF-védelem részletei a [docs/ical-synchronization.md](docs/ical-synchronization.md) dokumentumban találhatók. A szinkron worker indítása: `npm run ical:sync`.
+
+## Projektátadás
+
+Az aktuális állapotot a [PROJECT_HANDOFF](docs/PROJECT_HANDOFF.md), a Windows runbookot a [LOCAL_DEVELOPMENT_RUNBOOK](docs/LOCAL_DEVELOPMENT_RUNBOOK.md), az új chat promptokat pedig a [NEW_CHAT_STARTER](docs/NEW_CHAT_STARTER.md) dokumentálja.
+
 ## Helyi indítás
 1. Másold a `.env.example` fájlt `.env` néven, és állítsd be a helyi értékeket.
 2. Ha Docker Desktop telepítve van és fut, indítsd el a PostgreSQL konténert:
