@@ -17,4 +17,8 @@ A projekt scaffold alapú és a biztonsági irányelvek dokumentáltak, de a tel
 - Az API a Prisma/adatbázis hibák helyett stabil publikus hibakódot ad.
 - A publikus referencia kriptográfiai véletlen 40 bites suffixet tartalmaz, személyes és növekvő adatbázis-azonosító nélkül.
 - Az opcionális idempotenciakulcs legfeljebb 100 karakter, korlátozott karakterkészlettel; az eltérő tartalmú újrahasználat konfliktus.
-- E-mail-szolgáltató és tényleges e-mail-küldés ebben a sprintben nincs integrálva.
+- A provider konfiguráció környezeti változókból, központi Zod-validációval érkezik; titok nem kerül az adatbázisba.
+- Production környezetben a console provider nem küld és nem naplóz tartalmat. Fejlesztésben is maszkolt cím és személyes adat nélküli metadata kerül a console-ra.
+- Az outbox hibaüzenete stabil, tisztított kód/szöveg; nem tárol provider-választ, API-kulcsot vagy Authorization headert.
+- A sablon minden felhasználói HTML-tartalmat escape-el. A címzett kizárólag szerveren validált booking-adatból származik.
+- Az API-válasz nem tartalmaz e-mail/outbox adatot, és a provider hibája nem törli a már commitolt foglalást.

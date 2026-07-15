@@ -1,0 +1,85 @@
+import { EmailStatus, EmailType, type EmailOutbox } from "@prisma/client";
+import { describe, expect, it, vi } from "vitest";
+import { processEmailOutbox, nextAttemptDate } from "@/lib/email/process-email-outbox";
+import type { EmailConfig } from "@/lib/email/config";
+
+const now = new Date("2030-01-01T10:00:00.000Z");
+const config: EmailConfig = { provider: "console", fromName: "Teszt", fromAddress: "from@example.test", replyTo: "", notificationEmail: "admin@example.test", maxAttempts: 5, appName: "Teszt" };
+
+function email(overrides: Partial<EmailOutbox> = {}): EmailOutbox {
+  return {
+    id: "email-1", type: EmailType.BOOKING_REQUEST_GUEST, status: EmailStatus.PENDING,
+    recipient: "guest@example.test", subject: "Subject", textBody: "Text", htmlBody: "<p>Text</p>", bookingId: "booking-1",
+    attemptCount: 0, maxAttempts: 5, nextAttemptAt: now, sentAt: null, failedAt: null,
+    lastErrorCode: null, lastErrorMessage: null, providerMessageId: null, deduplicationKey: "booking:1:guest",
+    createdAt: now, updatedAt: now, ...overrides,
+  };
+}
+
+function fakeClient(initial: EmailOutbox[]) {
+  const rows = initial.map((row) => ({ ...row }));
+  let transactionTail = Promise.resolve();
+  const transaction = {
+    $queryRaw: async () => {
+      const candidate = rows.find((row) => ((row.status === EmailStatus.PENDING || row.status === EmailStatus.RETRY) && row.nextAttemptAt <= now) || (row.status === EmailStatus.PROCESSING && row.updatedAt <= new Date(now.getTime() - 15 * 60_000)));
+      if (!candidate) return [];
+      candidate.status = EmailStatus.PROCESSING; candidate.updatedAt = now;
+      return [{ ...candidate }];
+    },
+  };
+  const client = {
+    $transaction: <T>(callback: (tx: typeof transaction) => Promise<T>) => {
+      const run = transactionTail.then(() => callback(transaction));
+      transactionTail = run.then(() => undefined, () => undefined);
+      return run;
+    },
+    emailOutbox: {
+      update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+        const row = rows.find((item) => item.id === where.id)!;
+        for (const [key, value] of Object.entries(data)) {
+          if (key === "attemptCount" && typeof value === "object") row.attemptCount += (value as { increment: number }).increment;
+          else (row as unknown as Record<string, unknown>)[key] = value;
+        }
+        return row;
+      },
+    },
+  };
+  return { client, rows };
+}
+
+describe("processEmailOutbox", () => {
+  it("marks a successfully sent PENDING message as SENT", async () => {
+    const { client, rows } = fakeClient([email()]);
+    const provider = { send: vi.fn().mockResolvedValue({ messageId: "provider-1" }) };
+    await expect(processEmailOutbox(client as never, provider, config, { now })).resolves.toEqual({ sent: 1, retried: 0, failed: 0 });
+    expect(rows[0]).toMatchObject({ status: EmailStatus.SENT, attemptCount: 1, providerMessageId: "provider-1", sentAt: now });
+  });
+
+  it("increments attempts and schedules deterministic RETRY after provider failure", async () => {
+    const { client, rows } = fakeClient([email()]);
+    const provider = { send: vi.fn().mockRejectedValue(new Error("secret provider response")) };
+    await expect(processEmailOutbox(client as never, provider, config, { now })).resolves.toEqual({ sent: 0, retried: 1, failed: 0 });
+    expect(rows[0]).toMatchObject({ status: EmailStatus.RETRY, attemptCount: 1, nextAttemptAt: nextAttemptDate(1, now), lastErrorCode: "EMAIL_SEND_FAILED" });
+    expect(rows[0]!.lastErrorMessage).not.toContain("secret");
+  });
+
+  it("marks the message FAILED at max attempts", async () => {
+    const { client, rows } = fakeClient([email({ attemptCount: 4 })]);
+    await processEmailOutbox(client as never, { send: vi.fn().mockRejectedValue(new Error()) }, config, { now });
+    expect(rows[0]).toMatchObject({ status: EmailStatus.FAILED, attemptCount: 5, failedAt: now });
+  });
+
+  it("does not resend an already SENT message", async () => {
+    const { client } = fakeClient([email({ status: EmailStatus.SENT })]);
+    const provider = { send: vi.fn() };
+    await processEmailOutbox(client as never, provider, config, { now });
+    expect(provider.send).not.toHaveBeenCalled();
+  });
+
+  it("lets only one of two parallel workers claim the same message", async () => {
+    const { client } = fakeClient([email()]);
+    const provider = { send: vi.fn().mockResolvedValue({ messageId: "provider-1" }) };
+    await Promise.all([processEmailOutbox(client as never, provider, config, { now, limit: 1 }), processEmailOutbox(client as never, provider, config, { now, limit: 1 })]);
+    expect(provider.send).toHaveBeenCalledTimes(1);
+  });
+});

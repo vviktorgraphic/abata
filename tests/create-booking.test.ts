@@ -8,7 +8,7 @@ const input = {
   childAges: [8], notes: "Csendes szoba", privacyAccepted: true as const,
 };
 
-function fakeClient(options: { bookingBlocked?: boolean; calendarBlocked?: boolean } = {}) {
+function fakeClient(options: { bookingBlocked?: boolean; calendarBlocked?: boolean; outboxFailure?: boolean } = {}) {
   const state = { bookingBlocked: options.bookingBlocked ?? false, calendarBlocked: options.calendarBlocked ?? false, creates: [] as Array<Record<string, unknown>>, outbox: [] as Array<Record<string, unknown>>, idempotency: new Map<string, Record<string, unknown>>() };
   const rule = {
     id: "rule-3-4", unitId: "unit-1", name: "3–4", startDate: null, endDate: null,
@@ -32,13 +32,23 @@ function fakeClient(options: { bookingBlocked?: boolean; calendarBlocked?: boole
       create: async ({ data }: { data: Record<string, unknown> & { key: string } }) => { state.idempotency.set(data.key, data); return data; },
     },
     emailOutbox: {
-      createMany: async ({ data }: { data: Array<Record<string, unknown>> }) => { state.outbox.push(...data); return { count: data.length }; },
+      createMany: async ({ data }: { data: Array<Record<string, unknown>> }) => {
+        if (options.outboxFailure) throw new Error("outbox failure");
+        state.outbox.push(...data); return { count: data.length };
+      },
     },
   };
   let tail = Promise.resolve();
   const client = {
     $transaction: <T>(callback: (tx: typeof transaction) => Promise<T>) => {
-      const run = tail.then(() => callback(transaction));
+      const run = tail.then(async () => {
+        const snapshot = { creates: state.creates.length, outbox: state.outbox.length, bookingBlocked: state.bookingBlocked };
+        try { return await callback(transaction); }
+        catch (error) {
+          state.creates.length = snapshot.creates; state.outbox.length = snapshot.outbox; state.bookingBlocked = snapshot.bookingBlocked;
+          throw error;
+        }
+      });
       tail = run.then(() => undefined, () => undefined);
       return run;
     },
@@ -65,11 +75,19 @@ describe("createBookingRequest", () => {
     expect(create.privacyAcceptedAt).toEqual(new Date("2029-01-01"));
     expect(state.outbox).toHaveLength(2);
     expect(state.outbox.map((email) => email.type)).toEqual(["BOOKING_REQUEST_GUEST", "BOOKING_REQUEST_ADMIN"]);
+    expect(new Set(state.outbox.map((email) => email.deduplicationKey)).size).toBe(2);
   });
 
   it("rejects a booking conflict", async () => {
     const { client } = fakeClient({ bookingBlocked: true });
     await expect(createBookingRequest(client as never, input, undefined, new Date("2029-01-01"))).rejects.toMatchObject({ code: "BOOKING_PERIOD_UNAVAILABLE" });
+  });
+
+  it("rolls back the booking when outbox creation fails", async () => {
+    const { client, state } = fakeClient({ outboxFailure: true });
+    await expect(createBookingRequest(client as never, input, undefined, new Date("2029-01-01"))).rejects.toThrow("outbox failure");
+    expect(state.creates).toHaveLength(0);
+    expect(state.outbox).toHaveLength(0);
   });
 
   it("rejects a CalendarBlock conflict", async () => {

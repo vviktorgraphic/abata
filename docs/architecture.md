@@ -25,6 +25,12 @@ A mentés Prisma `Serializable` tranzakcióban történik. A tranzakció `pg_adv
 
 Az `Idempotency-Key` és a normalizált kérés SHA-256 hash-e a `BookingRequestIdempotency` rekordban tárolódik a biztonságos válasszal. A rekordok 24 óra után lejártak; későbbi ütemezett karbantartás törli az `expiresAt` szerinti rekordokat, a kérésfolyamat pedig újrafelhasználáskor eltávolítja a lejárt kulcsot.
 
+## Tranzakciós e-mail outbox
+
+A booking, price snapshot, status history és a vendég/admin `EmailOutbox` rekordok ugyanabban a tranzakcióban jönnek létre. Provider-hívás nincs a tranzakcióban. Idempotens replay a mentési ág előtt visszatér, ezért nem duplikál e-mailt; ezt az egyedi `deduplicationKey` adatbázis-korlát is védi.
+
+Az `email:process` worker rövid tranzakcióban, `FOR UPDATE SKIP LOCKED` használatával foglal le egy rekordot `PROCESSING` állapotra, majd tranzakción kívül küld. A provider lassúsága így nem tart adatbázis-lockot. A 15 percnél régebbi `PROCESSING` rekord újra felvehető. A részleteket a `docs/email-system.md` tartalmazza.
+
 ## Közös elvek
 
 - Minden üzleti szabály szerveroldalon érvényesül.
