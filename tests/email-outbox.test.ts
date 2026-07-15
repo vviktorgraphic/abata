@@ -65,6 +65,18 @@ describe("processEmailOutbox", () => {
     info.mockRestore(); vi.unstubAllEnvs();
   });
 
+  it("logs the code for the standalone worker when NODE_ENV is unset", async () => {
+    vi.stubEnv("NODE_ENV", "");
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await new ConsoleEmailProvider().send({
+      to: "home@example.com", from: { name: "Test", address: "from@example.com" }, subject: "Code",
+      text: "Admin bejelentkezési kód: 654321\nA kód 10 percig érvényes.", html: "", providerMessageKey: "k",
+      metadata: { emailType: "ADMIN_LOGIN_CODE" },
+    });
+    expect(info).toHaveBeenCalledWith(expect.stringContaining("code=654321"));
+    info.mockRestore(); vi.unstubAllEnvs();
+  });
+
   it("never logs the admin login code in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);

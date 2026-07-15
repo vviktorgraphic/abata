@@ -12,7 +12,12 @@ export class ConsoleEmailProvider implements EmailProvider {
     if (process.env.NODE_ENV === "production") throw new EmailConfigurationError();
     const type = String(message.metadata?.emailType ?? "UNKNOWN");
     const base = `[email:console] type=${type} to=${maskedAddress(message.to)}`;
-    if (process.env.NODE_ENV === "development" && type === "ADMIN_LOGIN_CODE") {
+    // The standalone outbox worker is commonly run without NODE_ENV. Treat that
+    // non-production, non-test process as development so local codes remain
+    // inspectable, while production and test behavior stay restrictive.
+    const environment = process.env.NODE_ENV as string | undefined;
+    const canShowDevelopmentCode = environment !== "production" && environment !== "test";
+    if (canShowDevelopmentCode && type === "ADMIN_LOGIN_CODE") {
       const code = message.text.match(/(?:kód|code)\D+(\d{6})/i)?.[1] ?? "[redacted]";
       const expiresInMinutes = message.text.match(/(\d+) perc/i)?.[1] ?? "[unknown]";
       console.info(`${base} code=${code} expiresInMinutes=${expiresInMinutes}`);
