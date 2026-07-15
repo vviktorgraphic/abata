@@ -10,22 +10,29 @@ export type CalendarDayAvailability = {
   hasDepartureBoundary: boolean;
 };
 
-export function parseDateOnly(value: string): Date {
-  return new Date(`${value}T00:00:00.000Z`);
+export function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year!, month! - 1, day!);
 }
 
-export function toDateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+export function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function addUtcDays(date: Date, days: number): Date {
+export const parseDateOnly = parseLocalDate;
+export const toDateOnly = formatLocalDate;
+
+export function addLocalDays(date: Date, days: number): Date {
   const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() + days);
+  result.setDate(result.getDate() + days);
   return result;
 }
 
-export function startOfUtcToday(now = new Date()): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+export function startOfLocalToday(now = new Date()): Date {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 export function getCalendarDayAvailability(
@@ -33,8 +40,8 @@ export function getCalendarDayAvailability(
   intervals: readonly PublicAvailabilityInterval[],
   now = new Date(),
 ): CalendarDayAvailability {
-  const day = toDateOnly(date);
-  const isPast = date < startOfUtcToday(now);
+  const day = formatLocalDate(date);
+  const isPast = day < formatLocalDate(startOfLocalToday(now));
   const hasArrivalBoundary = intervals.some((interval) => interval.start === day);
   const hasDepartureBoundary = intervals.some((interval) => interval.end === day);
   const isFullyBlocked = intervals.some((interval) => day > interval.start && day < interval.end);
@@ -55,18 +62,18 @@ export function isSelectableBookingInterval(
   intervals: readonly PublicAvailabilityInterval[],
   now = new Date(),
 ): boolean {
-  if (checkIn < startOfUtcToday(now) || checkOut <= checkIn) return false;
+  if (formatLocalDate(checkIn) < formatLocalDate(startOfLocalToday(now)) || checkOut <= checkIn) return false;
   return !intervals.some((interval) =>
-    doBookingIntervalsOverlap(checkIn, checkOut, parseDateOnly(interval.start), parseDateOnly(interval.end)),
+    doBookingIntervalsOverlap(checkIn, checkOut, parseLocalDate(interval.start), parseLocalDate(interval.end)),
   );
 }
 
 export function getMonthGrid(month: Date): Array<Date | null> {
-  const first = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1));
-  const mondayOffset = (first.getUTCDay() + 6) % 7;
-  const days = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0)).getUTCDate();
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   return [
     ...Array<null>(mondayOffset).fill(null),
-    ...Array.from({ length: days }, (_, index) => new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), index + 1))),
+    ...Array.from({ length: days }, (_, index) => new Date(month.getFullYear(), month.getMonth(), index + 1)),
   ];
 }

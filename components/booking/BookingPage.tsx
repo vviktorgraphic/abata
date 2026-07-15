@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { PublicAvailabilityInterval } from "@/lib/booking/availability";
-import { getCalendarDayAvailability, isSelectableBookingInterval, toDateOnly } from "@/lib/booking/calendar";
+import { formatLocalDate, getCalendarDayAvailability, isSelectableBookingInterval } from "@/lib/booking/calendar";
 import { AvailabilityLegend } from "./AvailabilityLegend";
 import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
 
-function monthStart(date = new Date()): Date { return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)); }
-function shiftMonth(date: Date, amount: number): Date { return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + amount, 1)); }
+function monthStart(date = new Date()): Date { return new Date(date.getFullYear(), date.getMonth(), 1); }
+function shiftMonth(date: Date, amount: number): Date { return new Date(date.getFullYear(), date.getMonth() + amount, 1); }
 
 export function BookingPage() {
   const [firstMonth, setFirstMonth] = useState(() => monthStart());
@@ -21,7 +21,7 @@ export function BookingPage() {
   useEffect(() => {
     const controller = new AbortController();
     const to = shiftMonth(firstMonth, 2);
-    fetch(`/api/availability?from=${toDateOnly(firstMonth)}&to=${toDateOnly(to)}`, { signal: controller.signal })
+    fetch(`/api/availability?from=${formatLocalDate(firstMonth)}&to=${formatLocalDate(to)}`, { signal: controller.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Az elérhetőségi adatok nem tölthetők be."); return response.json() as Promise<{ intervals: PublicAvailabilityInterval[] }>; })
       .then((data) => setIntervals(data.intervals))
       .catch((reason: unknown) => { if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Ismeretlen hiba történt."); })

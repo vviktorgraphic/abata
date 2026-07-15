@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { toDateOnly } from "@/lib/booking/calendar";
+import { formatLocalDate } from "@/lib/booking/calendar";
 import { bookingFormSchema, synchronizeChildAges } from "@/lib/booking/validation";
 import { ChildAgeFields } from "./ChildAgeFields";
 import { GuestCountFields } from "./GuestCountFields";
@@ -27,8 +27,8 @@ export function BookingForm({ checkIn, checkOut, onReset }: { checkIn: Date | nu
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const result = bookingFormSchema.safeParse({
-      checkIn: checkIn ? toDateOnly(checkIn) : "",
-      checkOut: checkOut ? toDateOnly(checkOut) : "",
+      checkIn: checkIn ? formatLocalDate(checkIn) : "",
+      checkOut: checkOut ? formatLocalDate(checkOut) : "",
       name: data.get("name"), email: data.get("email"), phone: data.get("phone"),
       adultCount, childCount, childAges, notes: data.get("notes") ?? "",
       privacyAccepted: data.get("privacyAccepted") === "on",

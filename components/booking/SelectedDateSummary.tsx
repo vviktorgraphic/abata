@@ -1,6 +1,6 @@
 import { calculateNumberOfNights } from "@/lib/booking/domain";
 
-const formatter = new Intl.DateTimeFormat("hu-HU", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+const formatter = new Intl.DateTimeFormat("hu-HU", { year: "numeric", month: "short", day: "numeric" });
 
 export function SelectedDateSummary({ checkIn, checkOut }: { checkIn: Date | null; checkOut: Date | null }) {
   return (

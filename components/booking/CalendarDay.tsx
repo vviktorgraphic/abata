@@ -1,4 +1,4 @@
-import { getCalendarDayAvailability, toDateOnly } from "@/lib/booking/calendar";
+import { formatLocalDate, getCalendarDayAvailability } from "@/lib/booking/calendar";
 import type { PublicAvailabilityInterval } from "@/lib/booking/availability";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 
 export function CalendarDay({ date, intervals, selected, rangeStart, rangeEnd, onSelect }: Props) {
   const availability = getCalendarDayAvailability(date, intervals);
-  const dateValue = toDateOnly(date);
+  const dateValue = formatLocalDate(date);
   const status = availability.isPast
     ? "múltbeli, nem választható"
     : availability.isFullyBlocked
@@ -40,11 +40,17 @@ export function CalendarDay({ date, intervals, selected, rangeStart, rangeEnd, o
       type="button"
       className={classNames}
       onClick={() => onSelect(date)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(date);
+        }
+      }}
       disabled={availability.isPast || availability.isFullyBlocked}
       aria-label={`${dateValue}, ${status}${selected ? ", kiválasztott időszak" : ""}`}
       aria-pressed={selected}
     >
-      <span>{date.getUTCDate()}</span>
+      <span>{date.getDate()}</span>
       {(availability.hasArrivalBoundary || availability.hasDepartureBoundary) && <span className="sr-only">{status}</span>}
     </button>
   );

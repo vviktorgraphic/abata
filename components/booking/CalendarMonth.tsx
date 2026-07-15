@@ -1,9 +1,9 @@
 import type { PublicAvailabilityInterval } from "@/lib/booking/availability";
-import { getMonthGrid, toDateOnly } from "@/lib/booking/calendar";
+import { formatLocalDate, getMonthGrid } from "@/lib/booking/calendar";
 import { CalendarDay } from "./CalendarDay";
 
 const weekdays = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
-const monthFormatter = new Intl.DateTimeFormat("hu-HU", { month: "long", year: "numeric", timeZone: "UTC" });
+const monthFormatter = new Intl.DateTimeFormat("hu-HU", { month: "long", year: "numeric" });
 
 type Props = {
   month: Date;
@@ -23,10 +23,10 @@ export function CalendarMonth({ month, intervals, checkIn, checkOut, onSelect }:
       <div className="calendar-grid">
         {getMonthGrid(month).map((date, index) => {
           if (!date) return <span key={`empty-${index}`} aria-hidden="true" />;
-          const value = toDateOnly(date);
-          const startValue = checkIn ? toDateOnly(checkIn) : null;
-          const endValue = checkOut ? toDateOnly(checkOut) : null;
-          const selected = Boolean(startValue && value >= startValue && (!endValue || value <= endValue));
+          const value = formatLocalDate(date);
+          const startValue = checkIn ? formatLocalDate(checkIn) : null;
+          const endValue = checkOut ? formatLocalDate(checkOut) : null;
+          const selected = Boolean(startValue && (endValue ? value >= startValue && value <= endValue : value === startValue));
           return (
             <CalendarDay
               key={value}

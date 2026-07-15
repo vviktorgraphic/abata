@@ -47,12 +47,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
 .calendar-weekdays { margin-bottom: 7px; color: var(--muted); font-size: 0.72rem; font-weight: 700; text-align: center; }
 .calendar-day { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-width: 38px; min-height: 42px; overflow: hidden; border: 1px solid transparent; border-radius: 9px; background: var(--free); color: var(--foreground); cursor: pointer; isolation: isolate; }
-.calendar-day::before { position: absolute; z-index: -1; inset: 0; content: ""; }
+.calendar-day::before { position: absolute; z-index: -1; inset: 0; content: ""; pointer-events: none; }
 .calendar-day:hover:not(:disabled) { border-color: var(--free-strong); transform: translateY(-1px); }
 .calendar-day--blocked { background: var(--blocked-soft); color: #742d2b; cursor: not-allowed; }
 .calendar-day--arrival-boundary::before { background: linear-gradient(135deg, var(--free) 0 49%, var(--blocked-soft) 50% 100%); }
 .calendar-day--departure-boundary::before { background: linear-gradient(135deg, var(--blocked-soft) 0 49%, var(--free) 50% 100%); }
-.calendar-day--arrival-boundary::after, .calendar-day--departure-boundary::after { position: absolute; right: 5px; bottom: 3px; content: "↗"; color: var(--blocked); font-size: 0.65rem; font-weight: 800; }
+.calendar-day--arrival-boundary::after, .calendar-day--departure-boundary::after { position: absolute; right: 5px; bottom: 3px; content: "↗"; color: var(--blocked); font-size: 0.65rem; font-weight: 800; pointer-events: none; }
 .calendar-day--departure-boundary::after { right: auto; bottom: auto; top: 3px; left: 5px; content: "↘"; }
 .calendar-day--past { background: #f1f2f1; color: #9ca5a1; cursor: not-allowed; text-decoration: line-through; }
 .calendar-day--selected { border-color: #b27b18; box-shadow: inset 0 0 0 2px var(--selected); }

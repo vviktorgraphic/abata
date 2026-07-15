@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicAvailabilityIntervals } from "@/lib/booking/availability";
-import { addUtcDays, parseDateOnly } from "@/lib/booking/calendar";
 import { prisma } from "@/lib/prisma";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseRangeDate(value: string | null): Date | null {
   if (!value || !DATE_ONLY_PATTERN.test(value)) return null;
-  const date = parseDateOnly(value);
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year!, month! - 1, day!));
   return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value ? null : date;
 }
 
@@ -37,6 +37,6 @@ export async function GET(request: NextRequest) {
   }
 
   // `to` is an exclusive API boundary, matching the booking domain.
-  const intervals = await getPublicAvailabilityIntervals(prisma, from, addUtcDays(to, 0));
+  const intervals = await getPublicAvailabilityIntervals(prisma, from, to);
   return NextResponse.json({ range: { from: fromValue, to: toValue }, intervals });
 }

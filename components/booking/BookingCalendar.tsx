@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function BookingCalendar(props: Props) {
-  const secondMonth = new Date(Date.UTC(props.firstMonth.getUTCFullYear(), props.firstMonth.getUTCMonth() + 1, 1));
+  const secondMonth = new Date(props.firstMonth.getFullYear(), props.firstMonth.getMonth() + 1, 1);
   return (
     <section className="booking-calendar" aria-busy={props.loading}>
       <div className="calendar-toolbar">
